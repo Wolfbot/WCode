@@ -1,5 +1,5 @@
 PROJ_NAME= Wolfbot
-CC 		 = g++
+CC       = g++
 SRCEXT   = cpp
 SRCDIR   = src
 OBJDIR   = obj
