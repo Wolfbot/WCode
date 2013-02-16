@@ -1,3 +1,4 @@
+#pragma once
 
 #ifndef WOLFBOT_H
 #define WOLFBOT_H

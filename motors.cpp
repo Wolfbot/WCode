@@ -1,17 +1,39 @@
+//=============================================================================
+// Name        : Motors.cpp
+// Author      : Jimit Patel
+// Version     : 1.1 (DEBUG VERSION)
+// Description : Class; defines the Motors API
+//=============================================================================
 
-#include <motors.h>
+#include <Motors.h>
 
-motors::motors(){
-	// Disable motors
-	setGPIO(63, false);
+Motors::Motors(){
+	// Enable motors
+	setGPIO(63, true);
 	// Stop motors	
 	setMotorPWM(1, 0);
 	setMotorPWM(2, 0);
 	setMotorPWM(3, 0);
 }
 
+void Motors::stop(){
+	// Stop motors	
+	setMotorPWM(1, 0);
+	setMotorPWM(2, 0);
+	setMotorPWM(3, 0);
+}
 
-void motors::setMotorHeading(float heading){
+void Motors::disable(){
+	//Disable motors
+	setGPIO(63, false);
+}
+
+void Motors::enable(){
+	//Enable motors
+	setGPIO(63, true);
+}
+
+void Motors::setMotorHeading(float heading){
 	cout << "Heading: " << heading << " deg" << endl;
 	// Calculate angles
 	float v_1 = 100.0f*sin(_dtor(60.0-heading));
@@ -53,19 +75,17 @@ void motors::setMotorHeading(float heading){
 } 
 
 
-void motors::setMotorPWM (int motor, int duty){
+void Motors::setMotorPWM (int motor, int duty){
 	// Set frequency to 100Hz
-	const int freq = 100;
+	//const int freq = 100;
 
 	// Check for out of range values
 	if ((duty < 0) || (duty > 100)) {
-			cerr << "Out of range" << endl;
-			return;
+		cerr << "Out of range" << endl;
+		return;
 	}
 	
-	cout << "Motor " << motor
-	  << ": f=" << freq
-	  << " d=" << duty << endl;
+	cout << "Motor " << motor<< ": f=" << freq_motors<< " d=" << duty << endl;
 
 	// Determine where the motor control files are
 	string dir;
@@ -84,9 +104,9 @@ void motors::setMotorPWM (int motor, int duty){
 		cerr << "Invalid motor number." << endl;
 		return;
 	}
-	
-        // Open files and write new parameters
-        ofstream fDuty, fFreq, fRun, fRequest;
+
+	// Open files and write new parameters
+	ofstream fDuty, fFreq, fRun, fRequest;
 
 	// Create filenames
 	string requestFile = dir + string("/request");
@@ -94,29 +114,29 @@ void motors::setMotorPWM (int motor, int duty){
 	string freqFile = dir + string("/period_freq");
 	string runFile = dir + string("/run");
 
-        // Open necessary files
-        fRequest.open(requestFile.c_str());
-        fDuty.open(dutyFile.c_str());
-        fFreq.open(freqFile.c_str());
-        fRun.open(runFile.c_str());
+	// Open necessary files
+	fRequest.open(requestFile.c_str());
+	fDuty.open(dutyFile.c_str());
+	fFreq.open(freqFile.c_str());
+	fRun.open(runFile.c_str());
 
-        fRequest << 1 << endl;          // Request control
-        fFreq << freq << endl;          // Set frequency
-        fDuty << duty << endl;          // Set duty cycle in nanoseconds
-		fRequest << 0 << endl;          // Release control
-        fRun << 1 << endl;              // Start PWM if it is stopped
+	fRequest << 1 << endl;          // Request control
+	fFreq << freq_motors << endl;   // Set frequency**** (redundant??)
+	fDuty << duty << endl;          // Set duty cycle in nanoseconds
+	fRequest << 0 << endl;          // Release control
+	fRun << 1 << endl;              // Start PWM if it is stopped
 
-        // Close files
-        fRequest.close();
-        fDuty.close();
-        fFreq.close();
-        fRun.close();
+	// Close files
+	fRequest.close();
+	fDuty.close();
+	fFreq.close();
+	fRun.close();
 
-        return;
+	return;
 }
 
 //NOTE: In Future versions, define this as static / push this in header file
-void motors::setGPIO(int gpioNumber, bool value)
+void Motors::setGPIO(int gpioNumber, bool value)
 {
 	fstream fValue;	
 	fstream fExport;
@@ -143,6 +163,42 @@ void motors::setGPIO(int gpioNumber, bool value)
 
 	fValue.close();
 	
+	return;
+}
+
+void Motors::tiltDeg (float deg)
+{
+	// Check for out of range values
+	if ((deg < 0.0) || (deg > 90.0)) {
+		cerr << "Out of range" << endl;
+		return;
+	}
+
+	// Compute duty cycle using measured parameters
+	int dutyNs = (int) calDutyNs(deg);
+	// frequency -> 50Hz (typical hobby servo freq.)
+
+	// Open files and write new parameters
+	ofstream fDuty, fFreq, fRun, fRequest;
+
+	// Open necessary files
+	fRequest.open("/sys/class/pwm/ecap.0/request");
+	fDuty.open("/sys/class/pwm/ecap.0/duty_ns");
+	fFreq.open("/sys/class/pwm/ecap.0/period_freq");
+	fRun.open("/sys/class/pwm/ecap.0/run");
+
+	fRequest << 1 << endl;		// Request control
+	fDuty << dutyNs << endl;	// Set duty cycle in nanoseconds
+	fFreq << freq_tilt << endl;		// Set frequency
+	fRequest << 0 << endl;		// Release control
+	fRun << 1 << endl;		// Start PWM if it is stopped
+
+	// Close files
+	fRequest.close();
+	fDuty.close();
+	fFreq.close();
+	fRun.close();
+
 	return;
 }
 

@@ -1,12 +1,12 @@
 //=============================================================================
 // Name        : Talker.cpp
-// Author      : 
-// Version     : 3 - DEBUG VERSION
+// Author      : Jimit Patel
+// Version     : 1.0 - DEBUG VERSION
 // Description : Connect to Optitrack server, get the raw data, delimit for " " 
 //=============================================================================
 
 
-#include <wolfbot.h>
+#include <Wolfbot.h>
 
 extern float X,Z;
 extern pthread_mutex_t mutex_cords, mutex_flag; 
