@@ -34,7 +34,7 @@ void *tilt_cam(void *ptr){
 		motor->tiltDeg(deg_specified);									//Single tilt
 	}
 	// If no position specified, tilt through entire range
-	else if (condition == 0) {
+	else if (condition == 0) {											//default
 		int deg = -1;
 		for (int count_tilts = 0 ; count_tilts < 2; count_tilts++){		//Continuous tilting approx 60 sec sweep
 		
