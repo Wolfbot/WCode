@@ -13,12 +13,8 @@ extern pthread_mutex_t mutex_cords, mutex_flag;
 extern char av1[10], av2[10];
 extern int ac;
 
-void error(const char *msg)
-{
-    perror(msg);
-	return ;
-    //exit(0);
-}
+extern Error *error;
+
 
 class Position{
 public:
@@ -46,9 +42,12 @@ Position splitter(char *src,char *delimiter){
 
 void *talker(void *ptr)
 {
+	
+	error->log(1,P_Talker);
+
 	char *args;
 	args = (char *)ptr;
-    char recvBuff[10000];								//--Dont change the size; its same in the server...
+       char recvBuff[10000];								//--Dont change the size; its same in the server...
 	char delimiter[] = " ";
 	memset(recvBuff, '0',sizeof(recvBuff));				//set buffer to 0s
 
@@ -61,7 +60,8 @@ void *talker(void *ptr)
     portno = 27018;										//Port no for server
     sockfd = socket(AF_INET, SOCK_STREAM, 0);
     if (sockfd < 0) 
-        error("ERROR opening socket");
+       // error("ERROR opening socket");
+	error->log(0,P_Talker);
     server = gethostbyname(args);
     if (server == NULL) {
         fprintf(stderr,"ERROR, no such host... returning from the co-ord thread\n");

@@ -15,6 +15,7 @@ extern float X,Z;
 extern pthread_mutex_t mutex_cords, mutex_flag; 
 
 extern Motors *motor;
+extern Error *error;
 
 static int BoundChk();
 static bool IsObstacle();
@@ -27,32 +28,36 @@ void *tilt_cam(void *ptr);
 
 void *tilt_cam(void *ptr){
 	
-	int condition=0;
+	error->log(1,P_Tilt);	
+
+	int condition=1;
 	float deg_specified=30;
 	// If position specified, tilt and stop
 	if (condition == 1) {
 		motor->tiltDeg(deg_specified);									//Single tilt
 	}
 	// If no position specified, tilt through entire range
-	else if (condition == 0) {											//default
+	else if (condition == 0) {
 		int deg = -1;
 		for (int count_tilts = 0 ; count_tilts < 2; count_tilts++){		//Continuous tilting approx 60 sec sweep
 		
 				for (deg = 0; deg <= 50 ; deg += 10){
-					if (flagShutdown==1) return;
-					motor->tiltDeg((float) deg);
+					if (flagShutdown==1) break;
+					motor->tiltDeg(deg);
 					sleep(1);
 				}
 				
-				sleep(10);
+				if (flagShutdown==1) break;
+				sleep(5);
+				
 				
 				for (deg = 50; deg >= 0 ; deg -= 10){
-					if (flagShutdown==1) return;
+					if (flagShutdown==1) break;
 					motor->tiltDeg((float) deg);
 					sleep(1);
 				}
 				
-				sleep(10);
+				sleep(5);
 			}
 	}
 
@@ -68,9 +73,12 @@ void *run_motors(void *ptr){
 	float heading;
 	int bound_result = -1;
 	
+	error->log(1,P_Motors);
+
 	if (ac == 2) {
 	
 		motor->enable();
+		error->log(1,M_Start);
 		
 		// Send in random directions	
 		for(int i = 0; i<60; i++) {
@@ -79,17 +87,20 @@ void *run_motors(void *ptr){
 			pthread_mutex_lock( &mutex_flag );
 			if (flagObs == 1) {
 				motor->stop();
-				flagObs == 0;
+				pthread_mutex_unlock( &mutex_flag );
+				error->log(1,S_Obs);
 				continue;
 			}
-			pthread_mutex_unlock( &mutex_flag );
+			
 		
 		
 		
 			//Task - 2 - Generate random heading
 			srand(time(NULL));
 			heading = (float) (rand() % 360 + 1);
+			pthread_mutex_lock( &mutex_flag );			
 			motor->setMotorHeading(heading);
+			pthread_mutex_unlock( &mutex_flag );
 			sleep(1);
 	
 			
@@ -102,13 +113,17 @@ void *run_motors(void *ptr){
 			pthread_mutex_unlock( &mutex_cords );
 			if (bound_result==1){
 				cout << "WolfBot is going out of the field ... " << endl;
+				error->log(1,S_Bound);
+
 				//reverse the current headng ?? .... 
 				if (heading >180) {
 					heading-=180;
 				} else {
 					heading+=180;
 				}
+				pthread_mutex_lock( &mutex_flag );
 				motor->setMotorHeading(heading);
+				pthread_mutex_unlock( &mutex_flag );
 				//Allow time for the wolfbot to get sufficiently inside the field.
 				sleep(4);					
 			}
@@ -117,7 +132,10 @@ void *run_motors(void *ptr){
 		}
 	}//end of random motion
 	else if (ac == 4) {
-		
+	
+		motor->enable();
+		error->log(1,M_Start);
+
 		heading = (float) atof(av1);
 		int sleep_time = (int) atoi(av2);
 
@@ -135,12 +153,14 @@ void *run_motors(void *ptr){
 	motor->stop();
 	motor->disable();
 	
+	error->log(1,M_Stop);
+	
 	cout<<"Exiting the motors thread..."<<endl;
 }
 
 
 static int BoundChk(){
-	int result = 0;													//1 for moving out of the field; 0 otherwise
+	int result = 0;								//1 for moving out of the field; 0 otherwise
 	float distance = sqrtf(X*X + Z*Z);
 	if (distance >= 1200){
 		result = 1;
@@ -151,6 +171,7 @@ static int BoundChk(){
 
 void *chk_obs(void *ptr){
 	cout <<"obstacle detection thread started"<<endl;	
+	error->log(1,P_Obs);
 	while(1){
 		if (IsObstacle()){
 			pthread_mutex_lock( &mutex_flag );
@@ -158,7 +179,11 @@ void *chk_obs(void *ptr){
 			motor->stop();
 			pthread_mutex_unlock( &mutex_flag );
 			cout << "OBSTACLE DETECTED "<<endl;
-			break;
+		}
+		else {
+			pthread_mutex_lock( &mutex_flag );
+			flagObs = 0;
+			pthread_mutex_unlock( &mutex_flag );
 		}
 		sleepms(250);
 	}

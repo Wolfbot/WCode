@@ -1,0 +1,28 @@
+
+=====================================================================
+
+
+Thu Apr 18 15:29:27 2013
+	 	 	Program launched & log file opened. 
+Thu Apr 18 15:29:27 2013
+	 	 	Program has started successfully
+Thu Apr 18 15:29:27 2013
+	 	 	Inside Tilt Thread
+Thu Apr 18 15:29:27 2013
+	 	 	Inside the motors thread
+Thu Apr 18 15:29:27 2013
+	 	 	Motors started
+Thu Apr 18 15:29:27 2013
+	 	 	Inside the talker
+Thu Apr 18 15:29:27 2013
+	 	 	Inside Obstacle thread
+Thu Apr 18 15:29:32 2013
+	 	 	Motors stopped
+Thu Apr 18 15:29:32 2013
+	 	 	NO ERROR or ISSUES
+Thu Apr 18 15:29:32 2013
+	 	 	Terminating the program with success
+
+=====================================================================
+
+

@@ -21,6 +21,7 @@
 #include <netinet/in.h>
 #include <netdb.h> 
 #include <pthread.h>
+#include <Error.h>
 
 #define _dtor(d) ((d) * (3.14159265359 / 180))
 #define debug 1

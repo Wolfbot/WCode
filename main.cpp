@@ -38,7 +38,7 @@ pthread_mutex_t mutex_cords = PTHREAD_MUTEX_INITIALIZER;
 
 //Objects
 Motors *motor;
-
+Error *error;
 //----------------------------------------------------//
 
 
@@ -66,7 +66,10 @@ int main (int argc, char* argv[])
 	Z=0.0f;
 	ac = argc;
 	motor = new Motors();
-	
+	error = new Error();		
+
+	error->log(1,P_START);
+
 	if (ac==4){
 		strcpy(av1,argv[2]);
 		strcpy(av2,argv[3]);
@@ -83,6 +86,7 @@ int main (int argc, char* argv[])
 	
 
 	if ( (iret1+iret2+iret3+iret4)>0){
+		error->log(0,P_Threads);	
 		cout <<"Error in thread formations..."<<endl;
 		cout <<"iret for co-ords: "<<iret1<<endl;
 		cout <<"iret for obstacles: "<<iret2<<endl;
@@ -109,9 +113,12 @@ int main (int argc, char* argv[])
 	iret1 = pthread_join(p_Coord_receive,NULL);
 	iret2 = pthread_join(p_Obstacle_chk,NULL);
 	iret4 = pthread_join(p_Tilt_Cam,NULL);
+
+	error->log(1,G_Error);
+	//error->log(1,P_END);
 	
 	delete motor;
-	
+	delete error;	
 	return(EXIT_SUCCESS);
 }
 
