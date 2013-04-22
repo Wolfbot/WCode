@@ -2,7 +2,7 @@
 // Name        : Error.cpp
 // Author      : Jimit Patel
 // Version     : 1.0 (DEBUG VERSION)
-// Description : Class; exposes the Error handling functions API
+// Description : Class; exposes the Error handling & logging functions API
 //=============================================================================
 
 

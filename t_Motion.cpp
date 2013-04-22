@@ -1,14 +1,16 @@
 //=============================================================================
 // Name        : t_Motion.cpp
 // Author      : Jimit Patel
-// Version     : 1.2 (DEBUG VERSION), Last modified on 14th Feb, 2013
-// Description : Lib; Contains functions for Motion Control. Uses Motors Class
+// Version     : 2.4 (DEBUG VERSION), Last modified on 21st April, 2013
+// Description : Contains functions for Motion Control. Uses Motors Class
 //=============================================================================
 
 #include <Wolfbot.h>
 #include <Motors.h>
 
-extern char av1[10], av2[10];
+
+
+extern char av1[10], av2[10], av3[10];
 extern int ac,flagShutdown,flagObs;
 extern void sleepms(int millisec);
 extern float X,Z;
@@ -16,6 +18,7 @@ extern pthread_mutex_t mutex_cords, mutex_flag;
 
 extern Motors *motor;
 extern Error *error;
+extern int demo_type;
 
 static int BoundChk();
 static bool IsObstacle();
@@ -75,7 +78,7 @@ void *run_motors(void *ptr){
 	
 	error->log(1,P_Motors);
 
-	if (ac == 2) {
+	if (ac <= 2) {
 	
 		motor->enable();
 		error->log(1,M_Start);
@@ -84,11 +87,14 @@ void *run_motors(void *ptr){
 		for(int i = 0; i<60; i++) {
 			
 			//Task - 1 - Check for Obstacles
-			pthread_mutex_lock( &mutex_flag );
+			
 			if (flagObs == 1) {
+				pthread_mutex_lock( &mutex_flag );
 				motor->stop();
-				pthread_mutex_unlock( &mutex_flag );
+				pthread_mutex_unlock( &mutex_flag );			
 				error->log(1,S_Obs);
+				sleepms(500);
+				cout<<"here"<<endl;
 				continue;
 			}
 			
@@ -104,34 +110,35 @@ void *run_motors(void *ptr){
 			sleep(1);
 	
 			
-			
-			//Task - 3 -Check for overrun - separate thread for this task, like the obstacle detection????
-			pthread_mutex_lock( &mutex_cords );
-			bound_result = BoundChk();
-			cout<<"X: "<<X<<endl;
-			cout<<"Z: "<<Z<<endl;
-			pthread_mutex_unlock( &mutex_cords );
-			if (bound_result==1){
-				cout << "WolfBot is going out of the field ... " << endl;
-				error->log(1,S_Bound);
+			if (1 == demo_type){
+				//Task - 3 -Check for overrun - separate thread for this task, like the obstacle detection????
+				pthread_mutex_lock( &mutex_cords );
+				bound_result = BoundChk();
+				cout<<"X: "<<X<<endl;
+				cout<<"Z: "<<Z<<endl;
+				pthread_mutex_unlock( &mutex_cords );
+				if (bound_result==1){
+					cout << "WolfBot is going out of the field ... " << endl;
+					error->log(1,S_Bound);
 
-				//reverse the current headng ?? .... 
-				if (heading >180) {
-					heading-=180;
-				} else {
-					heading+=180;
+					//reverse the current headng ?? .... 
+					if (heading >180) {
+						heading-=180;
+					} else {
+						heading+=180;
+					}
+					pthread_mutex_lock( &mutex_flag );
+					motor->setMotorHeading(heading);
+					pthread_mutex_unlock( &mutex_flag );
+					//Allow time for the wolfbot to get sufficiently inside the field.
+					sleep(4);					
 				}
-				pthread_mutex_lock( &mutex_flag );
-				motor->setMotorHeading(heading);
-				pthread_mutex_unlock( &mutex_flag );
-				//Allow time for the wolfbot to get sufficiently inside the field.
-				sleep(4);					
 			}
 			
 			//end of a randome iteration
 		}
 	}//end of random motion
-	else if (ac == 4) {
+	else if (ac >= 3) {
 	
 		motor->enable();
 		error->log(1,M_Start);
@@ -139,15 +146,19 @@ void *run_motors(void *ptr){
 		heading = (float) atof(av1);
 		int sleep_time = (int) atoi(av2);
 
-		pthread_mutex_lock( &mutex_flag );
-		if (flagObs == 1) sleep_time = 0;
-		pthread_mutex_unlock( &mutex_flag );
-
-		cout << "Moving in phi=" << av1 << " for " << av2 << " seconds." << endl;
-
+	//	pthread_mutex_lock( &mutex_flag );
+		if (flagObs == 1) {
+			sleep_time = 0;
+			error->log(1,S_Obs);
+		}
+	//	pthread_mutex_unlock( &mutex_flag );
+	
 		// Send in specified heading for specified time
 		motor->setMotorHeading(heading);
+		cout << "Moving in phi=" << heading  << " for " << sleep_time << " seconds." << endl;
 		sleep(sleep_time);
+		
+		
 	}//end of linear motion
 
 	motor->stop();
@@ -207,7 +218,7 @@ static bool IsObstacle() {
 	fain.close();
 
 	adcVal = atof(adc);
-	if (1000 < adcVal){
+	if (1200 > adcVal){
 		ret+=1;
 	}
 	
@@ -225,7 +236,7 @@ static bool IsObstacle() {
 	fain.close();
 	
 	adcVal = atof(adc);
-	if (1000 < adcVal){
+	if (1200 > adcVal){
 		ret+=1;
 	} 
 	

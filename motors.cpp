@@ -1,6 +1,6 @@
 //=============================================================================
 // Name        : Motors.cpp
-// Author      : Jimit Patel
+// Author      : Charles Teague, Jimit Patel
 // Version     : 1.1 (DEBUG VERSION)
 // Description : Class; defines the Motors API
 //=============================================================================
@@ -38,14 +38,14 @@ void Motors::setMotorHeading(float heading){
 	// Calculate angles
 	float v_1 = 100.0f*sin(_dtor(60.0-heading));
 	float v_2 = 100.0f*sin(_dtor(300.0-heading));
-	float v_3 = 100.0f*sin(_dtor(heading));
+	float v_3 = 100.0f*sin(_dtor(180.0-heading));
 	
 	// Set motor directions
 	cout << "Reverse: ";
 	if (v_1 < 0) {	// Motor 1
 		cout << 1 << " ";
 		setGPIO(26, 1);	// Reverse
-		v_1 += 100;	// Duty cycle = 100-abs(duty)
+		v_1 += 100 ;	// Duty cycle = 100-abs(duty)
 	}
 	else {
 		setGPIO(26, 0);	// Forward
@@ -53,7 +53,7 @@ void Motors::setMotorHeading(float heading){
 	if (v_2 < 0) {	// Motor 2
 		cout << 2 << " ";
 		setGPIO(47, 1);	// Reverse
-		v_2 += 100;	// Duty cycle = 100-abs(duty)
+		v_2 += 100 ;	// Duty cycle = 100-abs(duty)
 	}
 	else {
 		setGPIO(47, 0);	// Forward

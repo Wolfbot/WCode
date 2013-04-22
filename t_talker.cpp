@@ -1,19 +1,141 @@
 //=============================================================================
-// Name        : Talker.cpp
+// Name        : t_talker.cpp
 // Author      : Jimit Patel
-// Version     : 1.0 - DEBUG VERSION
-// Description : Connect to Optitrack server, get the raw data, delimit for " " 
+// Version     : 2.2 - DEBUG VERSION
+// Description : Connect to Optitrack server / Broadcast data via UDP / Xbee 
 //=============================================================================
 
 
 #include <Wolfbot.h>
+#include "XBee.h"
+//#include "uart.h"
 
+
+extern void sleepms(int millisec);
+extern void Sleep(float s);
 extern float X,Z;
 extern pthread_mutex_t mutex_cords, mutex_flag; 
 extern char av1[10], av2[10];
 extern int ac;
-
 extern Error *error;
+
+const char *fileN = "/dev/i2c-3";			//I2C bus for LSM303DLHC
+int p1, p2;
+
+//Thread for Xbees
+void *xbee(void *ptr){
+	
+	error->log(1,P_Xb);
+
+	XBee zigbee;
+
+	if (MODE == 0) {
+		char msg[MAX_MSG_SIZE];
+		int i;
+		
+		/*cout << "This test program recives from the XBee and tests for Hello World\n";
+		cout << "It diplays Detected Hello World if Hello World has been recieved\n";
+		cout << "\n" << "All Recieved XBee messages will be printed below:\n:";
+		*/
+		zigbee.initXbee();
+	
+		for(i=0;i<MAX_MSG_SIZE-1;i++)
+			msg[i]=NULL;
+				
+		while(1){
+			zigbee.readXbee(msg);
+			cout << msg << "\n";
+			if(!strcmp(msg,"Hello World")){
+				cout << "Sleeping for 2 sec\n";
+				sleep(2);
+				cout << "Detected Hello World\n";
+			}
+			for(i=0;i<MAX_MSG_SIZE-1;i++)
+				msg[i]=NULL;
+		}
+
+	}else {
+		zigbee.initXbee();		
+              zigbee.sendXbee("Hello World");
+	}
+
+	error->logComment("Exiting the Xbee thread...");
+	
+	return 0;
+}
+
+
+//Implementation is UDP and not TCP
+void *broadcast(void *ptr){
+
+
+	error->log(1,P_Bro);
+   	int sock, length, n;
+  	socklen_t fromlen;
+   	struct sockaddr_in server;
+   	struct sockaddr_in from;
+   	char buf[20];
+   	char data[100];
+
+	try{
+		LSM303 lsm303dlhc(fileN);
+       	lsm303dlhc.enable();
+
+	
+		error->logComment("LSM303 enabled");
+
+		srand(time(NULL));
+
+		int id=100,ax=101,ay=202,az=303,mx=101,my=202,mz=303;
+   		p1=1,p2=2;
+	   	int d1=1200,d2=2000,d3=3000;		
+
+   		//if (argc < 2) {
+      		//	fprintf(stderr, "ERROR, no port provided\n");
+      		//	exit(0);
+   		//}
+  	 
+   		sock=socket(AF_INET, SOCK_DGRAM, 0);
+   		if (sock < 0) error->logComment("Error in opening socket");
+   		length = sizeof(server);
+   		bzero(&server,length);
+   		server.sin_family=AF_INET;
+   		server.sin_addr.s_addr=INADDR_ANY;
+   		server.sin_port=htons(8888);
+	   	if (bind(sock,(struct sockaddr *)&server,length)<0) 
+       		error->logComment("Error in binding the broadcast socket");
+   		fromlen = sizeof(struct sockaddr_in);
+
+	   	while (1) {
+			//Wait for remote connection
+
+			p1 = rand()%3;
+	         	p2 = rand()%3;
+			
+			//Get the accelerometer & magnetometer readings
+			lsm303dlhc.readAccelerationRaw();
+			lsm303dlhc.readMagnetometerRaw();
+			
+			sprintf(data,"%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d \n",id,lsm303dlhc.acc_x_raw,lsm303dlhc.acc_y_raw,lsm303dlhc.acc_z_raw,lsm303dlhc.mag_x_raw, lsm303dlhc.mag_y_raw, lsm303dlhc.mag_z_raw,p1,p2,d1,d2,d3);
+      	  		n = recvfrom(sock,buf,20,0,(struct sockaddr *)&from,&fromlen);
+       	  	if (n < 0) error->logComment("Error in recFrom");
+
+			//write(1,"Received a datagram: ",21);
+			//write(1,buf,n);
+			
+			n = sendto(sock,data,sizeof(data),0,(struct sockaddr *)&from,fromlen);
+			if (n  < 0) error->logComment("Error in sendTo");
+			sleepms(250);
+
+   		}
+	}
+	catch(exception& e){
+		error->logComment(e.what());
+	}
+   	return 0;
+}
+
+
 
 
 class Position{
@@ -35,7 +157,6 @@ Position splitter(char *src,char *delimiter){
 		counter++;
 		pch = strtok(NULL, " ");
 	}
-
 	return *info;
 
 }
@@ -64,8 +185,8 @@ void *talker(void *ptr)
 	error->log(0,P_Talker);
     server = gethostbyname(args);
     if (server == NULL) {
-        fprintf(stderr,"ERROR, no such host... returning from the co-ord thread\n");
-        
+        cout<<"ERROR, no such host... returning from the co-ord thread"<<endl;
+	 error->logComment("No host for the optitrack found");
     }
     bzero((char *) &serv_addr, sizeof(serv_addr));
     serv_addr.sin_family = AF_INET;
@@ -115,3 +236,7 @@ void *talker(void *ptr)
 	}
     return 0;
 }
+
+
+
+
