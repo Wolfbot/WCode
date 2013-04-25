@@ -45,7 +45,7 @@ void Motors::setMotorHeading(float heading){
 	if (v_1 < 0) {	// Motor 1
 		cout << 1 << " ";
 		setGPIO(26, 1);	// Reverse
-		v_1 += 100 ;	// Duty cycle = 100-abs(duty)
+		v_1 += 100;	// Duty cycle = 100-abs(duty)
 	}
 	else {
 		setGPIO(26, 0);	// Forward
@@ -53,7 +53,7 @@ void Motors::setMotorHeading(float heading){
 	if (v_2 < 0) {	// Motor 2
 		cout << 2 << " ";
 		setGPIO(47, 1);	// Reverse
-		v_2 += 100 ;	// Duty cycle = 100-abs(duty)
+		v_2 += 100;	// Duty cycle = 100-abs(duty)
 	}
 	else {
 		setGPIO(47, 0);	// Forward
