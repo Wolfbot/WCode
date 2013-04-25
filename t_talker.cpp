@@ -20,7 +20,7 @@ extern int ac;
 extern Error *error;
 
 const char *fileN = "/dev/i2c-3";			//I2C bus for LSM303DLHC
-int p1, p2;
+int p1,p2,d1,d2,d3;
 
 //Thread for Xbees
 void *xbee(void *ptr){
@@ -30,6 +30,7 @@ void *xbee(void *ptr){
 	XBee zigbee;
 
 	if (MODE == 0) {
+		error->logComment("Xbee in receiving mode");
 		char msg[MAX_MSG_SIZE];
 		int i;
 		
@@ -44,6 +45,7 @@ void *xbee(void *ptr){
 				
 		while(1){
 			zigbee.readXbee(msg);
+			error->logComment("Xbee : Recd a msg");
 			cout << msg << "\n";
 			if(!strcmp(msg,"Hello World")){
 				cout << "Sleeping for 2 sec\n";
@@ -55,6 +57,7 @@ void *xbee(void *ptr){
 		}
 
 	}else {
+		error->logComment("Xbee in sending mode");
 		zigbee.initXbee();		
               zigbee.sendXbee("Hello World");
 	}
@@ -64,6 +67,15 @@ void *xbee(void *ptr){
 	return 0;
 }
 
+
+
+void *xbee_send(void *ptr){
+	return 0;
+}
+
+void *xbee_rec(void *ptr){
+	return 0;
+}
 
 //Implementation is UDP and not TCP
 void *broadcast(void *ptr){
@@ -88,7 +100,7 @@ void *broadcast(void *ptr){
 
 		int id=100,ax=101,ay=202,az=303,mx=101,my=202,mz=303;
    		p1=1,p2=2;
-	   	int d1=1200,d2=2000,d3=3000;		
+	   	d1=1200,d2=2000,d3=3000;		
 
    		//if (argc < 2) {
       		//	fprintf(stderr, "ERROR, no port provided\n");
@@ -106,18 +118,110 @@ void *broadcast(void *ptr){
        		error->logComment("Error in binding the broadcast socket");
    		fromlen = sizeof(struct sockaddr_in);
 
-	   	while (1) {
-			//Wait for remote connection
 
-			p1 = rand()%3;
-	         	p2 = rand()%3;
+		//---Code for weak localization---TEMP ONLY
+
+		//PART-1
+
+		fstream fValue;	
+		fstream fExport;
+		char  N[3],E[3],W[3],S[3];
+		ostringstream conv;
+		conv << 49; 
+		string filename_en = string("/sys/class/gpio/gpio") + conv.str() + string("/value");		//IR_EN for Tx-value
+		string filename_en_dir = string("/sys/class/gpio/gpio") + conv.str() + string("/direction");	//IR_EN for Tx-direction
+
+		// Export GPIO (Make available via sysfs)
+		fExport.open("/sys/class/gpio/export");
+		fExport << conv << endl;
+		fExport.close();
+		//error->logComment("Enable is Exported");
+		
+		fValue.open(filename_en_dir.c_str());
+		fValue << "out" << endl;		//Change the direction to "out"
+		fValue.close();
+		fValue.open(filename_en.c_str());
+		fValue << "1" << endl;		//Enable Tx
+		fValue.close();
+
+		conv<<88;
+		string filename_n = string("/sys/class/gpio/gpio") + conv.str() + string("/value");	//IR_N for Rx
+		conv<<61;
+		string filename_e = string("/sys/class/gpio/gpio") + conv.str() + string("/value");	//IR_E for Rx
+		conv<<37;
+		string filename_w = string("/sys/class/gpio/gpio") + conv.str() + string("/value");	//IR_W for Rx
+		conv<<33;
+		string filename_s = string("/sys/class/gpio/gpio") + conv.str() + string("/value");	//IR_S for Rx
+
+		
+		// Export GPIO (Make available via sysfs)
+		fExport.open("/sys/class/gpio/export");
+		fExport << "88" << endl;
+		fExport << "61" << endl;
+		fExport << "37" << endl;
+		fExport << "33" << endl;
+		fExport.close();
+		//error->logComment("Directions are exported");
+		
+
+		//---End of code for weak localization
+
+
+
+
+	   	while (1) {
+			
+
+//			p1 = rand()%3;
+//	        p2 = rand()%3;
+
+
+			p1 = 0;
+			p2 = 0;
 			
 			//Get the accelerometer & magnetometer readings
 			lsm303dlhc.readAccelerationRaw();
 			lsm303dlhc.readMagnetometerRaw();
+
 			
+			//---Code for weak localization---TEMP ONLY
+			 
+			//PART-2
+			fValue.open(filename_n.c_str());
+			fValue.getline(N,1);
+			fValue.close();
+			//error->logComment("North");
+			if (strcmp(N,"1")){
+				fValue.open(filename_e.c_str());
+				fValue.getline(E,1);
+				fValue.close();
+				//error->logComment("East");
+				if (strcmp(E,"1")){
+					fValue.open(filename_w.c_str());
+					fValue.getline(W,1);
+					fValue.close();
+					//error->logComment("West");
+					if (strcmp(W,"1")){
+						fValue.open(filename_s.c_str());
+						fValue.getline(S,1);
+						fValue.close();	
+						//error->logComment("South");
+						if (strcmp(S,"0")) p1=1;
+						else p1=0;
+					}
+					else p1=1;					
+				}
+				else p1=1;
+			}else p1=1;
+			//---End of code for weak localization
+
+			//error->logComment("Localization complete");
+	
 			sprintf(data,"%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d \n",id,lsm303dlhc.acc_x_raw,lsm303dlhc.acc_y_raw,lsm303dlhc.acc_z_raw,lsm303dlhc.mag_x_raw, lsm303dlhc.mag_y_raw, lsm303dlhc.mag_z_raw,p1,p2,d1,d2,d3);
-      	  		n = recvfrom(sock,buf,20,0,(struct sockaddr *)&from,&fromlen);
+      	  		
+
+			//Wait for remote connection
+			n = recvfrom(sock,buf,20,0,(struct sockaddr *)&from,&fromlen);
        	  	if (n < 0) error->logComment("Error in recFrom");
 
 			//write(1,"Received a datagram: ",21);
@@ -125,7 +229,7 @@ void *broadcast(void *ptr){
 			
 			n = sendto(sock,data,sizeof(data),0,(struct sockaddr *)&from,fromlen);
 			if (n  < 0) error->logComment("Error in sendTo");
-			sleepms(250);
+			sleepms(400);
 
    		}
 	}
