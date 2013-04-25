@@ -153,23 +153,13 @@ int main (int argc, char* argv[])
 						strcpy(av2,argv[2]);
 					}
 
-					if (ac>3) strcpy(av3,argv[4]);
+					if (ac>3) strcpy(av3,argv[3]);
 					if (ac==2) strcpy(av3,argv[1]);
 					
 					flagShutdown = 0;
-					cout<<"About to start the obstacle detection thread..."<<endl;	
-				//	iret2 = pthread_create(&p_Obstacle_chk,NULL,&chk_obs,NULL);
-					iret2 = 0;
-					cout<<"About to start the camera tilting thread..."<<endl;
-					iret4 = pthread_create(&p_Tilt_Cam,NULL,&tilt_cam,NULL);
-					cout<<"About to start the broadcast thread..."<<endl;
-					iret5 = pthread_create(&p_Broadcast,NULL,&broadcast,NULL);
-					cout<<"About to start the Xbee thread..."<<endl;
-
-					iret6 = pthread_create(&p_Xbee,NULL,&xbee,NULL);
 
 					if (RUN_MOTORS == 1){			
-					//	sleep(1);
+						//sleep(1);
 						cout<<"About to start the motors thread..."<<endl;
 						iret3 = pthread_create(&p_Motors,NULL,&run_motors,NULL);
 					}
@@ -177,6 +167,17 @@ int main (int argc, char* argv[])
 						iret3 = 0;
 						if (ac>3 || ac == 2) sleep(atoi(av3));
 					}
+
+
+					cout<<"About to start the obstacle detection thread..."<<endl;	
+					iret2 = pthread_create(&p_Obstacle_chk,NULL,&chk_obs,NULL);
+					cout<<"About to start the camera tilting thread..."<<endl;
+					iret4 = pthread_create(&p_Tilt_Cam,NULL,&tilt_cam,NULL);
+					cout<<"About to start the broadcast thread..."<<endl;
+					iret5 = pthread_create(&p_Broadcast,NULL,&broadcast,NULL);
+				//	cout<<"About to start the Xbee thread..."<<endl;
+				//	iret6 = pthread_create(&p_Xbee,NULL,&xbee,NULL);
+					iret6=0;
 
 					
 					if ( (iret2+iret3+iret4+iret5+iret6)>0){
@@ -186,7 +187,7 @@ int main (int argc, char* argv[])
 						cout <<"iret for motors: "<<iret3<<endl;
 						cout <<"iret for tilt :"<<iret4<<endl;
 						cout <<"iret for Broadcast:"<<iret5<<endl;
-						cout <<"iret for Xbee: "<<iret6<<endl;
+			//			cout <<"iret for Xbee: "<<iret6<<endl;
 					}
 					
 					 
@@ -199,18 +200,18 @@ int main (int argc, char* argv[])
 			
 					if (EXIT_THREADS == 1){
 						//Send Cancellation request to all other threads
-//						iret2 = pthread_cancel(p_Obstacle_chk);
+						iret2 = pthread_cancel(p_Obstacle_chk);
 						iret4 = pthread_cancel(p_Tilt_Cam);
 						iret5 = pthread_cancel(p_Broadcast);
-						iret6 = pthread_cancel(p_Xbee);
+				//		iret6 = pthread_cancel(p_Xbee);
 					}
 					error->logComment("Cencellation signalled to all threads");
 					
 					//Wait for thread completion - log ALL
-//					iret2 = pthread_join(p_Obstacle_chk,NULL);
+					iret2 = pthread_join(p_Obstacle_chk,NULL);
 					iret4 = pthread_join(p_Tilt_Cam,NULL);
 					iret5 = pthread_join(p_Broadcast,NULL);
-					iret6 = pthread_join(p_Xbee,NULL);
+				//	iret6 = pthread_join(p_Xbee,NULL);
 					
 					error->logComment("All threads joined");
 					
