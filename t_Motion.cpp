@@ -1,7 +1,7 @@
 //=============================================================================
 // Name        : t_Motion.cpp
 // Author      : Jimit Patel
-// Version     : 2.4 (DEBUG VERSION), Last modified on 21st April, 2013
+// Version     : 2.5 (DEBUG VERSION), Last modified on 23rd April, 2013
 // Description : Contains functions for Motion Control. Uses Motors Class
 //=============================================================================
 
@@ -19,6 +19,7 @@ extern pthread_mutex_t mutex_cords, mutex_flag;
 extern Motors *motor;
 extern Error *error;
 extern int demo_type;
+extern int d1,d2,d3;
 
 static int BoundChk();
 static bool IsObstacle();
@@ -38,11 +39,13 @@ void *tilt_cam(void *ptr){
 	// If position specified, tilt and stop
 	if (condition == 1) {
 		motor->tiltDeg(deg_specified);									//Single tilt
+		error->logComment("Cam Tilted to a specific angle - once");
 	}
 	// If no position specified, tilt through entire range
 	else if (condition == 0) {
+		error->logComment("Cam sweeping a range of angular positions");
 		int deg = -1;
-		for (int count_tilts = 0 ; count_tilts < 2; count_tilts++){		//Continuous tilting approx 60 sec sweep
+		for (int count_tilts = 0 ; count_tilts < 2; count_tilts++){					//Continuous tilting approx 60 sec sweep
 		
 				for (deg = 0; deg <= 50 ; deg += 10){
 					if (flagShutdown==1) break;
@@ -84,7 +87,7 @@ void *run_motors(void *ptr){
 		error->log(1,M_Start);
 		
 		// Send in random directions	
-		for(int i = 0; i<60; i++) {
+		for(int i = 0; i<30; i++) {
 			
 			//Task - 1 - Check for Obstacles
 			
@@ -148,7 +151,7 @@ void *run_motors(void *ptr){
 
 	//	pthread_mutex_lock( &mutex_flag );
 		if (flagObs == 1) {
-			sleep_time = 0;
+			//sleep_time = 0;
 			error->log(1,S_Obs);
 		}
 	//	pthread_mutex_unlock( &mutex_flag );
@@ -210,33 +213,33 @@ static bool IsObstacle() {
 	char ain2[40]="/sys/devices/platform/omap/tsc/ain3";	//IR DMS#2	//not working, below the cam, 0 to left of it
 	char ain6[40]="/sys/devices/platform/omap/tsc/ain7";	//IR DMS#6
 	char adc[6];
-	int adcVal,ret=0;
+	int ret=0;
 	
 	ifstream fain;
 	fain.open(ain0);						// Open & read from the ain0 file
 	fain >> adc;
 	fain.close();
 
-	adcVal = atof(adc);
-	if (1200 > adcVal){
+	d1 = atof(adc);
+	if (d1 > 1500){
 		ret+=1;
 	}
 	
-	/*fain.open(ain2);						// Open & read from the ain2 file - BROKEN, check hw
+	fain.open(ain2);						// Open & read from the ain2 file
 	fain >> adc;
 	fain.close();
 	
-	adcVal = atof(adc);
-	if (1000 < adcVal){
+	d2 = atof(adc);
+	if (d2 > 1500){
 		ret+=1;
-	} */
+	} 
 	
 	fain.open(ain6);						// Open & read from the ain6 file
 	fain >> adc;
 	fain.close();
 	
-	adcVal = atof(adc);
-	if (1200 > adcVal){
+	d3 = atof(adc);
+	if (d3 > 1500){
 		ret+=1;
 	} 
 	
