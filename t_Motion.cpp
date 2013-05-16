@@ -221,7 +221,7 @@ static bool IsObstacle() {
 	fain.close();
 
 	d1 = atof(adc);
-	if (d1 > 1500){
+	if (d1 > 1000){
 		ret+=1;
 	}
 	
@@ -230,7 +230,7 @@ static bool IsObstacle() {
 	fain.close();
 	
 	d2 = atof(adc);
-	if (d2 > 1500){
+	if (d2 > 1200){
 		ret+=1;
 	} 
 	
@@ -239,7 +239,7 @@ static bool IsObstacle() {
 	fain.close();
 	
 	d3 = atof(adc);
-	if (d3 > 1500){
+	if (d3 > 1300){
 		ret+=1;
 	} 
 	

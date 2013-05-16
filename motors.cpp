@@ -36,9 +36,12 @@ void Motors::enable(){
 void Motors::setMotorHeading(float heading){
 	cout << "Heading: " << heading << " deg" << endl;
 	// Calculate angles
-	float v_1 = 100.0f*sin(_dtor(60.0-heading));
-	float v_2 = 100.0f*sin(_dtor(300.0-heading));
-	float v_3 = 100.0f*sin(_dtor(180.0-heading));
+	//float v_1 = 100.0f*sin(_dtor(60.0-heading));
+	//float v_2 = 100.0f*sin(_dtor(300.0-heading));
+	//float v_3 = 100.0f*sin(_dtor(heading));
+	float v_1 = 100.0f*sin(_dtor(240-heading));
+	float v_2 = 100.0f*sin(_dtor(0-heading));
+	float v_3 = 100.0f*sin(_dtor(120-heading));
 	
 	// Set motor directions
 	cout << "Reverse: ";

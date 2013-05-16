@@ -207,7 +207,7 @@ void *broadcast(void *ptr){
 						fValue.close();	
 						//error->logComment("South");
 						if (strcmp(S,"0")) p1=1;
-						else p1=0;
+						else p1=0;	
 					}
 					else p1=1;					
 				}
